@@ -203,7 +203,7 @@ then
 	# Sync time
 	####
 	#/usr/sbin/ntpd -q -p ntp0.ja.net
-	/usr/sbin/ntpdate -b ntp0.ja.net
+	/usr/sbin/ntpdate -b uk.pool.ntp.org
 	
 	# TODO: check time is accurate
 	
