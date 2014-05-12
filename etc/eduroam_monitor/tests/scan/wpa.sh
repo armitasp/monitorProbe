@@ -30,5 +30,5 @@ done < <(/usr/sbin/wpa_cli scan_results)
 
 shopt -u nocasematch
 
-TEST_INFO_HTML=$(echo "test=wpa&result=$RESULT&message=$ERROR&time=$(date +%Y%m%d)_$(date +%H%M%S)" | sed -e 's/\[/ /g' -e 's/\]/ /g')
+TEST_INFO_HTML=$(echo "test=wpa&result=$RESULT&message=$ERROR&time=$(date +%Y%m%d)_$(date +%H%M%S)" | sed -e 's/\[/ /g' -e 's/\]/ /g' -e 's/\+/ /g')
 echo $TEST_INFO_HTML
