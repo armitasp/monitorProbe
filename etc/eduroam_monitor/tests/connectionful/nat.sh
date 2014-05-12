@@ -2,29 +2,29 @@
 
 RESULT=false
 ERROR=""
-IP_ADDR=""
+END=2
+i=0
 
-while read cli_status                         
-do                                            
-        if [[ $cli_status =~ ^ip_address=.* ]]                                                                              
-        then                                                                                                                
- 		IP_ADDR=$(echo $cli_status | awk -F"=" '{print $2}')                                                                                                                                                              
-		ERROR="$ERROR#Global Address $IP_ADDR"   	
-        fi                                                                                              
-done < <(/usr/sbin/wpa_cli status)
-
-while read echo_status
+while [[ $i -le $END ]] 
 do
-	if [[ $echo_status =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]
-	then
-		if [[ $echo_status != $IP_ADDR ]]
+	while read ntp_status
+	do
+		if [[ $ntp_status =~ .*adjust\ time\ server.* ]]
 		then
 			RESULT=true
+			END=$i
+			ERROR="$ERROR#offset $(echo $ntp_status | awk -F"offset" '{print $2}')"
+		elif [[ $ntp_status =~ .*step\ time\ server.* ]]
+		then
+			RESULT=true
+			END=$i
+			ERROR="$ERROR#offset $(echo $ntp_status | awk -F"offset" '{print $2}')"
+		else
+			ERROR="$ERROR#$ntp_status"
 		fi
-
-		ERROR="$ERROR#Inside Address $echo_status"
-	fi
+	done < <(/usr/sbin/ntpdate uk.pool.ntp.org)
 	
-done < <(curl --cacert /etc/eduroam_monitor/ca.crt https://support.roaming.ja.net/cgi-bin/probe/ip_echo)
+	((i = i + 1))
+done
 
-echo "test=nat&result=$RESULT&message=$ERROR&time=$(date +%Y%m%d)_$(date +%H%M%S)"
+echo "test=ntp&result=$RESULT&message=$ERROR&time=$(date +%Y%m%d)_$(date +%H%M%S)"
