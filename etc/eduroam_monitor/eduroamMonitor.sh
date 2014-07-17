@@ -298,6 +298,7 @@ then
 			#####
 			# Convert test result to html
 			#####
+			#TODO: Do this properly instead of this bodge
 			TEST_INFO_HTML=$(echo $TEST_MESSAGE | sed -e 's/\#/%23/g' -e 's/\ /%20/g')
 			
 			#####                                                                                                                                                                         
