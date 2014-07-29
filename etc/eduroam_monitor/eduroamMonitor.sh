@@ -315,7 +315,7 @@ then
 			POST_DATA="probe=$PROBE_ID&test=$TEST_ID&result=$TEST_RESULT&message=$TEST_INFO_HTML&time=$TEST_TIME&check=$RESULT_DIGEST"
 			
 			######
-			# send test result to server with HTTP GET
+			# send test result to server with HTTP POST
 			######
 			RESPONSE=$(curl --cacert /etc/eduroam_monitor/ca.crt --data $POST_DATA $URL)
 			echo "$RESPONSE"
