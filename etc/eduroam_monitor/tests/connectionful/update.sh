@@ -14,23 +14,30 @@ function getScripts() {
 		NAME="$(echo $line | awk -F" " '{print $2}')"
 		URL="$(echo $line | awk -F" " '{print $3}')"
 		HASH="$(echo $line | awk -F" " '{print $4}')"			
-
-		### If script already exists compare the Hashes
-		if [ -a /etc/eduroam_monitor/tests/$1/$NAME ]
+		START_PROBE="$(echo $line | awk -F" " '{print $5}')"
+		STOP_PROBE="$(echo $line | awk -F" " '{print $6}')"
+		
+		### If Probe ID lies between START and STOP Probe
+		if [ $USER -ge $START_PROBE ] && [ $USER -le $STOP_PROBE ]
 		then
-				
-			## Compare Hashes download update if different
-			if [[ "$(sha1sum /etc/eduroam_monitor/tests/$1/$NAME | awk -F" " '{print $1}')" != $HASH ]]
+			
+			### If script already exists compare the Hashes
+			if [ -a /etc/eduroam_monitor/tests/$1/$NAME ]
 			then
-				### Download script and overwrite existing
-				curl --user $USER:$PASS --cacert /etc/eduroam_monitor/ca.crt -o /etc/eduroam_monitor/tests/$1/$NAME $URL 
-				chmod +x /etc/eduroam_monitor/tests/$1/$NAME
+				
+				## Compare Hashes download update if different
+				if [[ "$(sha1sum /etc/eduroam_monitor/tests/$1/$NAME | awk -F" " '{print $1}')" != $HASH ]]
+				then
+					### Download script and overwrite existing
+					curl --user $USER:$PASS --cacert /etc/eduroam_monitor/ca.crt -o /etc/eduroam_monitor/tests/$1/$NAME $URL 
+					chmod +x /etc/eduroam_monitor/tests/$1/$NAME
 	
-			fi 	
-		else
-			### Download New Test
-			curl --user $USER:$PASS --cacert /etc/eduroam_monitor/ca.crt -o /etc/eduroam_monitor/tests/$1/$NAME $URL			
-			chmod +x /etc/eduroam_monitor/tests/$1/$NAME
+				fi 	
+			else
+				### Download New Test
+				curl --user $USER:$PASS --cacert /etc/eduroam_monitor/ca.crt -o /etc/eduroam_monitor/tests/$1/$NAME $URL			
+				chmod +x /etc/eduroam_monitor/tests/$1/$NAME
+			fi
 		fi
 	fi
 	
@@ -45,5 +52,4 @@ do
 	getScripts connectionful
 	getScripts scan
 	
-done < <(curl --cacert /etc/eduroam_monitor/ca.crt https://support.roaming.ja.net/cgi-bin/probe/update)
-
+done < <(curl --cacert /etc/eduroam_monitor/ca.crt https://support.roaming.ja.net/cgi-bin/probe/update1)
