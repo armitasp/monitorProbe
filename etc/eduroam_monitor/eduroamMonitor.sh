@@ -311,14 +311,13 @@ then
 			#####
 			# Create reporting URL for test results
 			#####
-			GET_STRING="https://support.roaming.ja.net/cgi-bin/probe/probe?probe=$PROBE_ID&test=$TEST_ID&result=$TEST_RESULT&message=$TEST_INFO_HTML&time=$TEST_TIME&check=$RESULT_DIGEST"
-			echo "$GET_STRING"
+			URL="https://support.roaming.ja.net/cgi-bin/probe/probe"
+			POST_DATA="probe=$PROBE_ID&test=$TEST_ID&result=$TEST_RESULT&message=$TEST_INFO_HTML&time=$TEST_TIME&check=$RESULT_DIGEST"
 			
 			######
 			# send test result to server with HTTP GET
 			######
-			RESPONSE=$(curl --cacert /etc/eduroam_monitor/ca.crt $GET_STRING)
-			
+			RESPONSE=$(curl --cacert /etc/eduroam_monitor/ca.crt --data $POST_DATA $URL)
 			echo "$RESPONSE"
 			
 		fi
