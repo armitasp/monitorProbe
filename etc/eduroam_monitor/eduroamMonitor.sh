@@ -100,6 +100,11 @@ then
 	ln -s /proc/self/fd /dev/fd                                                                                                                                                                   
 fi
 
+#####                              
+# Bring down eth0                  
+####                                                                                                                         
+/sbin/ifconfig eth0 down 
+
 #####
 # Kill OpenWRT wpa_supplicant
 #####
@@ -229,11 +234,27 @@ then
 	# process test results #
 	########################
 
-	#####
-	# salt for result hash is eth0 Mac Addr
-	#####
-	SALT=`ip link show eth0 | awk '/ether/ {print $2}'`
-	
+        #####                                                                                                                
+        # bring up eth0 for reporting                                                                                        
+        #####                                                                                                                
+        /sbin/ifconfig eth0 up                                                                                               
+        if [[ $(head -n 1 /sys/class/net/eth0/operstate) != "up" ]]                                                          
+        then                                                                                                                 
+                sleep 2                                                                                                      
+        else  
+        
+        
+        #####                                                                            
+        # salt for result hash is eth0 Mac Addr                                          
+        #####                                                                            
+        SALT=$(head -n 1 /sys/class/net/eth0/address)                                    
+        
+        #alternative get salt                                                            
+        if [[ $SALT = "" ]]                                                              
+        then                                                                             
+        	SALT=`ip link show eth0 | awk '/ether/ {print $2}'`                      
+        fi 
+        
 	#or read from file
 	if [[ $SALT = "" ]]
 	then
