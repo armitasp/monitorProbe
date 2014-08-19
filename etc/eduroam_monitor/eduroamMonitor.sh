@@ -241,7 +241,7 @@ then
         if [[ $(head -n 1 /sys/class/net/eth0/operstate) != "up" ]]                                                          
         then                                                                                                                 
                 sleep 2                                                                                                      
-        else  
+        fi  
         
         
         #####                                                                            
