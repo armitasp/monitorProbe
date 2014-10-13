@@ -18,14 +18,26 @@ function getScan() {
 
         # Wait for APs to beacon
         sleep 5
+        
+        # Wait 30 seconds for Scan result else FAIL
+        scan_counter=0
+        scanned=0
+        while [[ $scan_counter -lt 30 ]] && [[ $scanned == 0 ]]
+        do
 
+                scan=$(/usr/sbin/wpa_cli scan)
+                if [[ $scan =~ OK$ ]]
+                then
+                        scanned=1
+                        local retval='OK'
+                        break
+                else
+                        local retval='FAIL'
+                        sleep 1
+                fi
+                scan_counter=$(( $scan_counter + 1 ))
+        done
 
-        if [[ $scan =~ OK$ ]]
-        then
-                local retval='OK'
-        else
-                local retval='FAIL'
-        fi
 
         local __result=$1
         eval $__result="'$retval'"
