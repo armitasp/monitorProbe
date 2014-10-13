@@ -67,8 +67,7 @@ function getConnection() {
 		then
 			connected=1
 			break
-		elif [[ $connection_status =~ Supplicant\ PAE\ state=.* ]]
-		then
+		else
 			sleep 5
 		fi
 		counter=$(( $counter + 1 ))
