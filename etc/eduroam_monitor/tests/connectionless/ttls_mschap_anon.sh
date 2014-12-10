@@ -86,7 +86,7 @@ do
 	fi
 
 
-done < <(/usr/sbin/wpa_cli status)
+done < <(/usr/sbin/wpa_cli status | sed 's/Pre-authentication\ EAPOL\ state\ machines\:.*//g')
 
 
 if [[ $FAIL == 1 ]]
