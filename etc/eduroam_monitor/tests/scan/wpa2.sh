@@ -7,7 +7,7 @@ ERROR=""
 while read line
 do
         shopt -s nocasematch
-        if [[ $line =~ ^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2} ]] && [[ $line =~ .*\[WPA2-EAP-CCMP.*eduroam.* ]] 
+        if [[ $line =~ ^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2} ]] && [[ $line =~ .*\[WPA2-EAP-CCMP.*[^\s]eduroam$ ]] 
         then
                 TOKENS=($line)
                 CIPHER=${TOKENS[3]}
@@ -15,7 +15,7 @@ do
                 RESULT=true
                 ERROR="$ERROR#BSSID#${TOKENS[0]}#CIPHER#$CIPHER"
         else
-                if [[ $line =~ ^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2} ]] && [[ $line =~ .*eduroam.* ]] 
+                if [[ $line =~ ^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2} ]] && [[ $line =~ .*[^\s]eduroam$ ]] 
                 then
                         TOKENS=($line)
                         CIPHER=${TOKENS[3]}
