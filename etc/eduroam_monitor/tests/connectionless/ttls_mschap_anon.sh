@@ -31,6 +31,7 @@ FAIL=0
 
 udhcpc -p /var/run/udhcpc-wlan0.pid -q -t 0 -i wlan0 -s /etc/eduroam_monitor/scripts/udhcpc -C eduProbe
 
+
 while read connection_status
 do
 	if [[ $connection_status =~ .*Supplicant\ PAE\ state=.* ]]
@@ -38,7 +39,8 @@ do
 		if [[ $connection_status =~ ^Supplicant\ PAE\ state=AUTHENTICATED.* ]]
 		then
 			RESULT=true
-		else
+		elif [[ $RESULT == false ]]
+		then
 			ERROR="$ERROR#PAE State#$(echo $connection_status | cut -d'=' -f2)"
 			FAIL=1
 		fi
@@ -47,7 +49,8 @@ do
 		if [[ $connection_status =~ .*Authorized$ ]]
 		then
 			RESULT=true
-		else
+		elif [[ $RESULT == false ]]
+		then
 			ERROR="$ERROR#suppPortStatus#$(echo $connection_status | cut -d'=' -f2)"
 			FAIL=1
 		fi
@@ -86,7 +89,7 @@ do
 	fi
 
 
-done < <(/usr/sbin/wpa_cli status | sed 's/Pre-authentication\ EAPOL\ state\ machines\:.*//g')
+done < <(/usr/sbin/wpa_cli status )
 
 
 if [[ $FAIL == 1 ]]
