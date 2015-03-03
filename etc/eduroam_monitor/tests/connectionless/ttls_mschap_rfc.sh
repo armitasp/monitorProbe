@@ -38,7 +38,8 @@ do
 		if [[ $connection_status =~ ^Supplicant\ PAE\ state=AUTHENTICATED.* ]]
 		then
 			RESULT=true
-		else
+		elif [[ $RESULT == false ]]
+		then
 			ERROR="$ERROR#PAE State#$(echo $connection_status | cut -d'=' -f2)"
 			FAIL=1
 		fi
@@ -47,7 +48,8 @@ do
 		if [[ $connection_status =~ .*Authorized$ ]]
 		then
 			RESULT=true
-		else
+		elif [[ $RESULT == false ]]
+		then
 			ERROR="$ERROR#suppPortStatus#$(echo $connection_status | cut -d'=' -f2)"
 			FAIL=1
 		fi
@@ -86,7 +88,7 @@ do
 	fi
 
 
-done < <(/usr/sbin/wpa_cli status | sed 's/Pre-authentication\ EAPOL\ state\ machines\:.*//g')
+done < <(/usr/sbin/wpa_cli status)
 
 
 if [[ $FAIL == 1 ]]
