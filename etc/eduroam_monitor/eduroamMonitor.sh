@@ -1,48 +1,6 @@
 #!/bin/bash
 
 
-HASH="df5cef1b487ad019695cd75f8a9fc7016747b9ac"
-ERROR=0
-
-
-if [[ "$(sha1sum /etc/eduroam_monitor/eduroamMonitor.sh | awk -F" " '{print $1}')" != $HASH ]]
-then
-
-	### Backup oldscript
-	if [ ! -f /etc/eduroam_monitor/eduroamMonitor.sh.1 ]
-	then
-		cp /etc/eduroam_monitor/eduroamMonitor.sh /etc/eduroam_monitor/eduroamMonitor.sh.1
-		if [[ "$(sha1sum /etc/eduroam_monitor/eduroamMonitor.sh | awk -F" " '{print $1}')" != "$(sha1sum /etc/eduroam_monitor/eduroamMonitor.sh.1 | awk -F" " '{print $1}')" ]]
-		then
-			ERROR=1
-		fi
-	fi
-
-
-	if [ $ERROR -eq 0 ]
-	then
-		### Get Username and Password for curl
-        	USER="$(tail /etc/eduroam_monitor/probeId)"
-        	PASS="$(tail /etc/eduroam_monitor/salt)"
-
-
-		### Get new generateCreds script
-        	curl --user $USER:$PASS --cacert /etc/eduroam_monitor/ca.crt -o /etc/eduroam_monitor/eduroamMonitor.sh https://support.roaming.ja.net/probe-scripts/eduroamMonitor.sh	
-	
-		chmod +x /etc/eduroam_monitor/eduroamMonitor.sh
-
-		#check checksum
-		if [[ "$(sha1sum /etc/eduroam_monitor/eduroamMonitor.sh | awk -F" " '{print $1}')" != $HASH ]]
-		then
-			cp /etc/eduroam_monitor/eduroamMonitor.sh.1 /etc/eduroam_monitor/eduroamMonitor.sh
-			rm /etc/eduroam_monitor/eduroamMonitor.sh.1
-		fi
-	fi	
-fi
-[root@support probe-scripts]# cat eduroamMonitor.sh  
-#!/bin/bash
-
-
 function getScan() {
 
         #######
