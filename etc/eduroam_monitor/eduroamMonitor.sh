@@ -1,6 +1,48 @@
 #!/bin/bash
 
 
+HASH="df5cef1b487ad019695cd75f8a9fc7016747b9ac"
+ERROR=0
+
+
+if [[ "$(sha1sum /etc/eduroam_monitor/eduroamMonitor.sh | awk -F" " '{print $1}')" != $HASH ]]
+then
+
+	### Backup oldscript
+	if [ ! -f /etc/eduroam_monitor/eduroamMonitor.sh.1 ]
+	then
+		cp /etc/eduroam_monitor/eduroamMonitor.sh /etc/eduroam_monitor/eduroamMonitor.sh.1
+		if [[ "$(sha1sum /etc/eduroam_monitor/eduroamMonitor.sh | awk -F" " '{print $1}')" != "$(sha1sum /etc/eduroam_monitor/eduroamMonitor.sh.1 | awk -F" " '{print $1}')" ]]
+		then
+			ERROR=1
+		fi
+	fi
+
+
+	if [ $ERROR -eq 0 ]
+	then
+		### Get Username and Password for curl
+        	USER="$(tail /etc/eduroam_monitor/probeId)"
+        	PASS="$(tail /etc/eduroam_monitor/salt)"
+
+
+		### Get new generateCreds script
+        	curl --user $USER:$PASS --cacert /etc/eduroam_monitor/ca.crt -o /etc/eduroam_monitor/eduroamMonitor.sh https://support.roaming.ja.net/probe-scripts/eduroamMonitor.sh	
+	
+		chmod +x /etc/eduroam_monitor/eduroamMonitor.sh
+
+		#check checksum
+		if [[ "$(sha1sum /etc/eduroam_monitor/eduroamMonitor.sh | awk -F" " '{print $1}')" != $HASH ]]
+		then
+			cp /etc/eduroam_monitor/eduroamMonitor.sh.1 /etc/eduroam_monitor/eduroamMonitor.sh
+			rm /etc/eduroam_monitor/eduroamMonitor.sh.1
+		fi
+	fi	
+fi
+[root@support probe-scripts]# cat eduroamMonitor.sh  
+#!/bin/bash
+
+
 function getScan() {
 
         #######
@@ -18,26 +60,14 @@ function getScan() {
 
         # Wait for APs to beacon
         sleep 5
-        
-        # Wait 30 seconds for Scan result else FAIL
-        scan_counter=0
-        scanned=0
-        while [[ $scan_counter -lt 30 ]] && [[ $scanned == 0 ]]
-        do
 
-                scan=$(/usr/sbin/wpa_cli scan)
-                if [[ $scan =~ OK$ ]]
-                then
-                        scanned=1
-                        local retval='OK'
-                        break
-                else
-                        local retval='FAIL'
-                        sleep 1
-                fi
-                scan_counter=$(( $scan_counter + 1 ))
-        done
 
+        if [[ $scan =~ OK$ ]]
+        then
+                local retval='OK'
+        else
+                local retval='FAIL'
+        fi
 
         local __result=$1
         eval $__result="'$retval'"
@@ -67,7 +97,8 @@ function getConnection() {
 		then
 			connected=1
 			break
-		else
+		elif [[ $connection_status =~ Supplicant\ PAE\ state=.* ]]
+		then
 			sleep 5
 		fi
 		counter=$(( $counter + 1 ))
@@ -110,11 +141,6 @@ if [ ! -L "/dev/fd" ]
 then                                                                                                                                                                                                  
 	ln -s /proc/self/fd /dev/fd                                                                                                                                                                   
 fi
-
-#####                              
-# Bring down eth0                  
-####                                                                                                                         
-/sbin/ifconfig eth0 down 
 
 #####
 # Kill OpenWRT wpa_supplicant
@@ -180,11 +206,13 @@ then
 	for FILE in "${scan_test_files[@]}"
 	do
 		RAW_RESULT=""
-		RAW_RESULT=$($FILE | awk 'END{print}')
-		if [[ ! -z "$RAW_RESULT" ]]
-		then
-			RESULTS=("${RESULTS[@]}" "$RAW_RESULT")
-		fi
+		#RAW_RESULT=$($FILE | awk 'END{print}')
+		RAW_RESULT=($($FILE))
+		for RES1 in "${RAW_RESULT[@]}"
+		do
+			RESULTS=("${RESULTS[@]}" "$RES1")
+		done
+		
 	done
 	
 	# Disconnect and tidy up
@@ -219,7 +247,7 @@ then
 	# Sync time
 	####
 	#/usr/sbin/ntpd -q -p ntp0.ja.net
-	/usr/sbin/ntpdate -b uk.pool.ntp.org
+	/usr/sbin/ntpdate -b ntp0.ja.net
 	
 	# TODO: check time is accurate
 	
@@ -234,38 +262,26 @@ then
 	for FILE in "${connect_test_files[@]}"                                                                                                                                                             
 	do                                                                                                                                                                                                    
 		RAW_RESULT=""                                                                                                                                                                                 
-	        RAW_RESULT=$($FILE | awk 'END{print}')                                                                                                                                                        
-	        if [[ ! -z "$RAW_RESULT" ]]                                                                                                                                                                   
-	        then                                                                                                                                                                                          
-	        	RESULTS=("${RESULTS[@]}" "$RAW_RESULT")                                                                                                                                               
-	        fi                                                                                                                                                                                            
+	       #RAW_RESULT=$($FILE | awk 'END{print}')                                                                                                                                                        
+	        RAW_RESULT=($($FILE))
+		for RES in "${RAW_RESULT[@]}"
+		do 
+	        	if [[ ! -z "$RES" ]]                                                                                                                                                                   
+	        	then                                                                                                                                                                                          
+	        		RESULTS=("${RESULTS[@]}" "$RES")                                                                                                                                               
+	        	fi
+		done                                                                                                                                                                                            
 	done 
 
 	########################
 	# process test results #
 	########################
 
-        #####                                                                                                                
-        # bring up eth0 for reporting                                                                                        
-        #####                                                                                                                
-        /sbin/ifconfig eth0 up                                                                                               
-        if [[ $(head -n 1 /sys/class/net/eth0/operstate) != "up" ]]                                                          
-        then                                                                                                                 
-                sleep 2                                                                                                      
-        fi  
-        
-        
-        #####                                                                            
-        # salt for result hash is eth0 Mac Addr                                          
-        #####                                                                            
-        SALT=$(head -n 1 /sys/class/net/eth0/address)                                    
-        
-        #alternative get salt                                                            
-        if [[ $SALT = "" ]]                                                              
-        then                                                                             
-        	SALT=`ip link show eth0 | awk '/ether/ {print $2}'`                      
-        fi 
-        
+	#####
+	# salt for result hash is eth0 Mac Addr
+	#####
+	SALT=`ip link show eth0 | awk '/ether/ {print $2}'`
+	
 	#or read from file
 	if [[ $SALT = "" ]]
 	then
@@ -330,7 +346,6 @@ then
 			#####
 			# Convert test result to html
 			#####
-			#TODO: Do this properly instead of this bodge
 			TEST_INFO_HTML=$(echo $TEST_MESSAGE | sed -e 's/\#/%23/g' -e 's/\ /%20/g')
 			
 			#####                                                                                                                                                                         
@@ -343,13 +358,14 @@ then
 			#####
 			# Create reporting URL for test results
 			#####
-			URL="https://support.roaming.ja.net/cgi-bin/probe/probe"
-			POST_DATA="probe=$PROBE_ID&test=$TEST_ID&result=$TEST_RESULT&message=$TEST_INFO_HTML&time=$TEST_TIME&check=$RESULT_DIGEST"
+			GET_STRING="https://support.roaming.ja.net/cgi-bin/probe/probe?probe=$PROBE_ID&test=$TEST_ID&result=$TEST_RESULT&message=$TEST_INFO_HTML&time=$TEST_TIME&check=$RESULT_DIGEST"
+			echo "$GET_STRING"
 			
 			######
-			# send test result to server with HTTP POST
+			# send test result to server with HTTP GET
 			######
-			RESPONSE=$(curl --cacert /etc/eduroam_monitor/ca.crt --data $POST_DATA $URL)
+			RESPONSE=$(curl --cacert /etc/eduroam_monitor/ca.crt $GET_STRING)
+			
 			echo "$RESPONSE"
 			
 		fi
@@ -362,5 +378,3 @@ fi
 ####
 wpa_cli logoff
 wpa_cli terminate
-
-
